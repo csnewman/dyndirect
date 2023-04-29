@@ -6,6 +6,7 @@ pygmentsCodeFences = true
 pygmentsCodefencesGuessSyntax = true
 pygmentsUseClasses = true
 
+[module]
 [module.hugoVersion]
 extended = true
 

@@ -2,17 +2,10 @@
 @import url('https://fonts.googleapis.com/css?family=Roboto:300,400,500,600,700|Lora:400,700|Roboto+Mono:300,400');
 
 // Bootstrap
-@import 'bootstrap/functions';
 @import 'bootstrap-variables';
-@import 'bootstrap/variables';
-@import 'bootstrap/mixins';
-@import 'bootstrap/reboot';
-@import 'bootstrap/utilities';
-@import 'bootstrap/grid';
-@import 'bootstrap/tables';
+@import "node_modules/bootstrap/scss/bootstrap.scss";
 
 // Libraries
-@import 'libraries/hamburgers/hamburgers';
 @import 'libraries/pygments/github';
 
 // Components
