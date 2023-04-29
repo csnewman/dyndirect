@@ -1,0 +1,149 @@
+openapi: 3.1.0
+info:
+  title: Dynamic Subdomain Management Protocol (DSDM)
+  version: '1.0'
+  description: Automated protocol for issuing and managing dynamically allocated subdomains.
+  contact:
+    name: dyn.direct
+    email: contact@dyn.direct
+  license:
+    name: MIT
+    identifier: MIT
+servers:
+  - url: https://v1.dyn.direct
+paths:
+  /:
+    get:
+      summary: Server Overview
+      operationId: overview
+      description: Returns an overview of the server.
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OverviewResponse'
+              example:
+                version: '1.0.0'
+  /subdomain:
+    post:
+      summary: Request new subdomain
+      operationId: new-subdomain
+      description: Request a new subdomain.
+      responses:
+        '200':
+          description: Subdomain allocated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NewSubdomainResponse'
+              example:
+                id: 497f6eca-6276-4993-bfeb-53cbbbba6f08
+                token: ZXhhbXBsZQ
+        '429':
+          description: Too many requests made.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: too-many-requests
+                message: Too many requests have been made from your IP address.
+  /subdomain/{subdomainId}/acme-challenge:
+    post:
+      summary: Add acme challenge token
+      operationId: subdomain-acme-challenge
+      description: Add acme challenge token to a subdomain.
+      parameters:
+        - in: path
+          name: subdomainId
+          description: ID of the subdomain to add to.
+          schema:
+            type: string
+            format: uuid
+            description: Subdomain ID.
+          required: true
+          example: 497f6eca-6276-4993-bfeb-53cbbbba6f08
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubdomainAcmeChallengeRequest'
+            example:
+              token: ZXhhbXBsZQ
+      responses:
+        '200':
+          description: Subdomain allocated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NewSubdomainResponse'
+              example:
+                id: 497f6eca-6276-4993-bfeb-53cbbbba6f08
+                token: ZXhhbXBsZQ
+        '403':
+          description: Invalid token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: invalid-token
+                message: The provided token is not valid for the subdomain.
+        '429':
+          description: Too many requests made.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: too-many-requests
+                message: Too many requests have been made from your IP address.
+components:
+  schemas:
+    OverviewResponse:
+      title: OverviewResponse
+      type: object
+      properties:
+        version:
+          type: string
+          description: Server Version.
+      required:
+        - version
+    NewSubdomainResponse:
+      title: NewSubdomainResponse
+      type: object
+      description: New Subdomain Response.
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Subdomain ID.
+        token:
+          type: string
+          description: Control Token.
+      required:
+        - token
+    SubdomainAcmeChallengeRequest:
+      title: SubdomainAcmeChallengeRequest
+      type: object
+      description: New Subdomain Response.
+      properties:
+        token:
+          type: string
+          description: Control Token.
+      required:
+        - token
+    ErrorResponse:
+      title: ErrorResponse
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+      required:
+        - error
+        - message
