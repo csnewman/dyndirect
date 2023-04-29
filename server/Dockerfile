@@ -23,6 +23,11 @@ RUN go build -v -o /out/server ./cmd/main.go
 
 FROM ubuntu:23.04
 
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ca-certificates && \
+    apt-get clean  && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
 # Copy build output
 COPY --from=builder /out/server /app/server
 

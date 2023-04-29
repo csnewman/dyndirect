@@ -1,12 +1,20 @@
-root_domain: example.com.
+root_domain: v1.example.com.
+api_host: v1.example.com
+api_listen_http: :8080
+api_listen_https: :8443
+tls_cert: example.crt
+tls_key: example.key
+acme_enabled: false
+acme_contact: v1.contact@example.com
 
 static_records:
   '@':
     A:
       - 127.0.0.1
+      - 127.0.0.2
   ns1:
     A:
       - 127.0.0.1
   ns2:
     A:
-      - 127.0.0.1
+      - 127.0.0.2

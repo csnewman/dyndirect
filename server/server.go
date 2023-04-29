@@ -1,8 +1,12 @@
 package server
 
 import (
+	"context"
+	"crypto/tls"
 	"github.com/miekg/dns"
 	"go.uber.org/zap"
+	"golang.org/x/crypto/acme/autocert"
+	"golang.org/x/sync/errgroup"
 	"net"
 	"strings"
 )
@@ -10,17 +14,55 @@ import (
 type Server struct {
 	logger *zap.SugaredLogger
 	cfg    Config
+	acm    *autocert.Manager
 }
 
 func New(logger *zap.SugaredLogger, cfg Config) *Server {
-	return &Server{
+	s := &Server{
 		logger: logger,
 		cfg:    cfg,
 	}
+
+	if cfg.ACMEEnabled {
+		s.acm = &autocert.Manager{
+			Prompt:     autocert.AcceptTOS,
+			HostPolicy: autocert.HostWhitelist(s.cfg.APIHost),
+			Cache:      autocert.DirCache("cache"),
+			Email:      s.cfg.ACMEContact,
+		}
+	}
+
+	return s
 }
 
 func (s *Server) Start() error {
-	return dns.ListenAndServe(":53", "udp", s)
+	group, _ := errgroup.WithContext(context.Background())
+
+	group.Go(func() error {
+		return dns.ListenAndServe(":53", "udp", s)
+	})
+
+	hs := s.buildHTTPServer()
+
+	if s.cfg.APIListenHTTPS != "" {
+		rs := s.buildHTTPRedirectServer()
+		group.Go(rs.ListenAndServe)
+
+		hs.Addr = s.cfg.APIListenHTTPS
+		hs.TLSConfig = &tls.Config{}
+
+		if s.cfg.ACMEEnabled {
+			hs.TLSConfig.GetCertificate = s.acm.GetCertificate
+		}
+
+		group.Go(func() error {
+			return hs.ListenAndServeTLS(s.cfg.CertFile, s.cfg.KeyFile)
+		})
+	} else {
+		group.Go(hs.ListenAndServe)
+	}
+
+	return group.Wait()
 }
 
 func (s *Server) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
@@ -50,12 +92,13 @@ func (s *Server) handleDNS(r *dns.Msg, m *dns.Msg) error {
 			continue
 		}
 
+		lcName := strings.ToLower(q.Name)
 		var name string
 
-		if q.Name == s.cfg.RootDomain {
+		if lcName == s.cfg.RootDomain {
 			name = "@"
-		} else if strings.HasSuffix(q.Name, "."+s.cfg.RootDomain) {
-			name = strings.TrimSuffix(q.Name, "."+s.cfg.RootDomain)
+		} else if strings.HasSuffix(lcName, "."+s.cfg.RootDomain) {
+			name = strings.TrimSuffix(lcName, "."+s.cfg.RootDomain)
 		} else {
 			continue
 		}
