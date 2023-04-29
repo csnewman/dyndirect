@@ -11,6 +11,8 @@ import (
 	"strings"
 )
 
+const Version = "1.0.0"
+
 type Server struct {
 	logger *zap.SugaredLogger
 	cfg    Config
@@ -36,13 +38,16 @@ func New(logger *zap.SugaredLogger, cfg Config) *Server {
 }
 
 func (s *Server) Start() error {
+	hs, err := s.buildHTTPServer()
+	if err != nil {
+		return err
+	}
+
 	group, _ := errgroup.WithContext(context.Background())
 
 	group.Go(func() error {
 		return dns.ListenAndServe(":53", "udp", s)
 	})
-
-	hs := s.buildHTTPServer()
 
 	if s.cfg.APIListenHTTPS != "" {
 		rs := s.buildHTTPRedirectServer()
