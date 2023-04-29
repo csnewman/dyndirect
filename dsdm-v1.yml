@@ -125,6 +125,7 @@ components:
           type: string
           description: Control Token.
       required:
+        - id
         - token
     SubdomainAcmeChallengeRequest:
       title: SubdomainAcmeChallengeRequest

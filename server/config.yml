@@ -6,6 +6,7 @@ tls_cert: example.crt
 tls_key: example.key
 acme_enabled: false
 acme_contact: v1.contact@example.com
+token_key: to_be_changed
 
 static_records:
   '@':

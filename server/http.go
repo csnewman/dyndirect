@@ -2,6 +2,7 @@ package server
 
 import (
 	"bytes"
+	"crypto/sha512"
 	"encoding/json"
 	v1 "github.com/csnewman/dyndirect/server/internal/v1"
 	oapi "github.com/deepmap/oapi-codegen/pkg/chi-middleware"
@@ -59,8 +60,12 @@ func (s *Server) buildHTTPRouter() (*chi.Mux, error) {
 		},
 	))
 
+	tokenHash := sha512.Sum512([]byte(s.cfg.TokenKey))
+
 	v1.HandlerWithOptions(
-		v1.NewStrictHandler(&v1API{}, nil),
+		v1.NewStrictHandler(&v1API{
+			tokenHash: tokenHash[:],
+		}, nil),
 		v1.ChiServerOptions{
 			BaseRouter: r,
 		},

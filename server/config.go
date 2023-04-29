@@ -11,6 +11,7 @@ type Config struct {
 	ACMEEnabled    bool                    `mapstructure:"acme_enabled"`
 	ACMEContact    string                  `mapstructure:"acme_contact"`
 	StaticRecords  map[string]StaticRecord `mapstructure:"static_records"`
+	TokenKey       string                  `mapstructure:"token_key"`
 }
 
 type StaticRecord struct {
