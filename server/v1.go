@@ -14,19 +14,19 @@ type v1API struct {
 	store     Store
 }
 
-func (v *v1API) Overview(
+func (v *v1API) GetOverview(
 	_ context.Context,
-	_ v1.OverviewRequestObject,
-) (v1.OverviewResponseObject, error) {
-	return v1.Overview200JSONResponse{
+	_ v1.GetOverviewRequestObject,
+) (v1.GetOverviewResponseObject, error) {
+	return v1.GetOverview200JSONResponse{
 		Version: Version,
 	}, nil
 }
 
-func (v *v1API) NewSubdomain(
+func (v *v1API) GenerateSubdomain(
 	_ context.Context,
-	_ v1.NewSubdomainRequestObject,
-) (v1.NewSubdomainResponseObject, error) {
+	_ v1.GenerateSubdomainRequestObject,
+) (v1.GenerateSubdomainResponseObject, error) {
 	id, err := uuid.NewRandom()
 	if err != nil {
 		return nil, err
@@ -34,7 +34,7 @@ func (v *v1API) NewSubdomain(
 
 	token := v.generateToken(id)
 
-	return v1.NewSubdomain200JSONResponse{
+	return v1.GenerateSubdomain200JSONResponse{
 		Id:    id,
 		Token: token,
 	}, nil

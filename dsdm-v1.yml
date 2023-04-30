@@ -15,7 +15,7 @@ paths:
   /:
     get:
       summary: Server Overview
-      operationId: overview
+      operationId: get-overview
       description: Returns an overview of the server.
       responses:
         '200':
@@ -29,7 +29,7 @@ paths:
   /subdomain:
     post:
       summary: Request new subdomain
-      operationId: new-subdomain
+      operationId: generate-subdomain
       description: Request a new subdomain.
       responses:
         '200':

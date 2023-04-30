@@ -58,10 +58,10 @@ type SubdomainAcmeChallengeJSONRequestBody = SubdomainAcmeChallengeRequest
 type ServerInterface interface {
 	// Server Overview
 	// (GET /)
-	Overview(w http.ResponseWriter, r *http.Request)
+	GetOverview(w http.ResponseWriter, r *http.Request)
 	// Request new subdomain
 	// (POST /subdomain)
-	NewSubdomain(w http.ResponseWriter, r *http.Request)
+	GenerateSubdomain(w http.ResponseWriter, r *http.Request)
 	// Set ACME challenge tokens
 	// (POST /subdomain/{subdomainId}/acme-challenge)
 	SubdomainAcmeChallenge(w http.ResponseWriter, r *http.Request, subdomainId openapi_types.UUID)
@@ -76,12 +76,12 @@ type ServerInterfaceWrapper struct {
 
 type MiddlewareFunc func(http.Handler) http.Handler
 
-// Overview operation middleware
-func (siw *ServerInterfaceWrapper) Overview(w http.ResponseWriter, r *http.Request) {
+// GetOverview operation middleware
+func (siw *ServerInterfaceWrapper) GetOverview(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.Overview(w, r)
+		siw.Handler.GetOverview(w, r)
 	})
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -91,12 +91,12 @@ func (siw *ServerInterfaceWrapper) Overview(w http.ResponseWriter, r *http.Reque
 	handler.ServeHTTP(w, r.WithContext(ctx))
 }
 
-// NewSubdomain operation middleware
-func (siw *ServerInterfaceWrapper) NewSubdomain(w http.ResponseWriter, r *http.Request) {
+// GenerateSubdomain operation middleware
+func (siw *ServerInterfaceWrapper) GenerateSubdomain(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.NewSubdomain(w, r)
+		siw.Handler.GenerateSubdomain(w, r)
 	})
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -246,10 +246,10 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	}
 
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/", wrapper.Overview)
+		r.Get(options.BaseURL+"/", wrapper.GetOverview)
 	})
 	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/subdomain", wrapper.NewSubdomain)
+		r.Post(options.BaseURL+"/subdomain", wrapper.GenerateSubdomain)
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/subdomain/{subdomainId}/acme-challenge", wrapper.SubdomainAcmeChallenge)
@@ -258,41 +258,41 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	return r
 }
 
-type OverviewRequestObject struct {
+type GetOverviewRequestObject struct {
 }
 
-type OverviewResponseObject interface {
-	VisitOverviewResponse(w http.ResponseWriter) error
+type GetOverviewResponseObject interface {
+	VisitGetOverviewResponse(w http.ResponseWriter) error
 }
 
-type Overview200JSONResponse OverviewResponse
+type GetOverview200JSONResponse OverviewResponse
 
-func (response Overview200JSONResponse) VisitOverviewResponse(w http.ResponseWriter) error {
+func (response GetOverview200JSONResponse) VisitGetOverviewResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type NewSubdomainRequestObject struct {
+type GenerateSubdomainRequestObject struct {
 }
 
-type NewSubdomainResponseObject interface {
-	VisitNewSubdomainResponse(w http.ResponseWriter) error
+type GenerateSubdomainResponseObject interface {
+	VisitGenerateSubdomainResponse(w http.ResponseWriter) error
 }
 
-type NewSubdomain200JSONResponse NewSubdomainResponse
+type GenerateSubdomain200JSONResponse NewSubdomainResponse
 
-func (response NewSubdomain200JSONResponse) VisitNewSubdomainResponse(w http.ResponseWriter) error {
+func (response GenerateSubdomain200JSONResponse) VisitGenerateSubdomainResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type NewSubdomain429JSONResponse ErrorResponse
+type GenerateSubdomain429JSONResponse ErrorResponse
 
-func (response NewSubdomain429JSONResponse) VisitNewSubdomainResponse(w http.ResponseWriter) error {
+func (response GenerateSubdomain429JSONResponse) VisitGenerateSubdomainResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(429)
 
@@ -338,10 +338,10 @@ func (response SubdomainAcmeChallenge429JSONResponse) VisitSubdomainAcmeChalleng
 type StrictServerInterface interface {
 	// Server Overview
 	// (GET /)
-	Overview(ctx context.Context, request OverviewRequestObject) (OverviewResponseObject, error)
+	GetOverview(ctx context.Context, request GetOverviewRequestObject) (GetOverviewResponseObject, error)
 	// Request new subdomain
 	// (POST /subdomain)
-	NewSubdomain(ctx context.Context, request NewSubdomainRequestObject) (NewSubdomainResponseObject, error)
+	GenerateSubdomain(ctx context.Context, request GenerateSubdomainRequestObject) (GenerateSubdomainResponseObject, error)
 	// Set ACME challenge tokens
 	// (POST /subdomain/{subdomainId}/acme-challenge)
 	SubdomainAcmeChallenge(ctx context.Context, request SubdomainAcmeChallengeRequestObject) (SubdomainAcmeChallengeResponseObject, error)
@@ -377,23 +377,23 @@ type strictHandler struct {
 	options     StrictHTTPServerOptions
 }
 
-// Overview operation middleware
-func (sh *strictHandler) Overview(w http.ResponseWriter, r *http.Request) {
-	var request OverviewRequestObject
+// GetOverview operation middleware
+func (sh *strictHandler) GetOverview(w http.ResponseWriter, r *http.Request) {
+	var request GetOverviewRequestObject
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.Overview(ctx, request.(OverviewRequestObject))
+		return sh.ssi.GetOverview(ctx, request.(GetOverviewRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "Overview")
+		handler = middleware(handler, "GetOverview")
 	}
 
 	response, err := handler(r.Context(), w, r, request)
 
 	if err != nil {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(OverviewResponseObject); ok {
-		if err := validResponse.VisitOverviewResponse(w); err != nil {
+	} else if validResponse, ok := response.(GetOverviewResponseObject); ok {
+		if err := validResponse.VisitGetOverviewResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -401,23 +401,23 @@ func (sh *strictHandler) Overview(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// NewSubdomain operation middleware
-func (sh *strictHandler) NewSubdomain(w http.ResponseWriter, r *http.Request) {
-	var request NewSubdomainRequestObject
+// GenerateSubdomain operation middleware
+func (sh *strictHandler) GenerateSubdomain(w http.ResponseWriter, r *http.Request) {
+	var request GenerateSubdomainRequestObject
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.NewSubdomain(ctx, request.(NewSubdomainRequestObject))
+		return sh.ssi.GenerateSubdomain(ctx, request.(GenerateSubdomainRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "NewSubdomain")
+		handler = middleware(handler, "GenerateSubdomain")
 	}
 
 	response, err := handler(r.Context(), w, r, request)
 
 	if err != nil {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(NewSubdomainResponseObject); ok {
-		if err := validResponse.VisitNewSubdomainResponse(w); err != nil {
+	} else if validResponse, ok := response.(GenerateSubdomainResponseObject); ok {
+		if err := validResponse.VisitGenerateSubdomainResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -461,23 +461,23 @@ func (sh *strictHandler) SubdomainAcmeChallenge(w http.ResponseWriter, r *http.R
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/+xWTXPbNhD9Kxi0h3ZGEhXbdWqemlg56OA2tT2dTDI+gMBSQkoADADK4Xj43zsLiB8S",
-	"adeJe+xFQxHYr7fv7fKBcqNKo0F7R9MH6vgWFAuP76w19hpcabQDfFFaU4L1EsIx4DE++LoEmlLnrdQb",
-	"2syoAufYBibOmhm18KWSFgRNP+1d9AZ3M+qlL9DiMPisdWSyz8A9Bvkd7m+qTBjFpB4mKcBxK0svjaYp",
-	"3iLdNdLeW9DZUTFSjG17u/UKLXJjFfM0pVUlRZ9SX7c3f4Me+7k02ltTkFs8XowNj0CJvoOrAR6T5U7A",
-	"8scO7E7C/eN924F1IbFRvWB3YMlf8fzfE20dDbIcRZ/IsCvjDVdwuWVFAXoD1/ClAuef6sKby6t3pDMg",
-	"e4txL7+zDTO6Y0UVXRxahsDBzKGd9KDcNPHZ13U8fLXs/DNrWT0CLybZxRxg+DQ+I0DRsdS5wYS40Z7x",
-	"ACIoJguatq9+E7VeCGnRZEY1U+hi8K6ZHddceaOYB0FKa7zhpiC5sUQ6V0m9IUwLophmG/wjas2U5Kwo",
-	"asKKwvBg59o6AmiF5LCnoxSgvcwlWJrSq/VtnxD+aXokVtHvQMBXGBIUaE/et2n9tLpZXf2MULbEpq8W",
-	"S/RjStCslDSlpwt8NaMl89vQugR/NjDBt2vwldWOME3Mns3E5MRvgbggEKwG6cbQYC0GrKfY4kj8EORk",
-	"uWy7AjqEYmVZSB4sk88uihC+MlUWcCBNrCDWEOcxHv5oIacp/SHpB3ayn9bJSHeBFsdC4hycWwQqukop",
-	"Zute9V0NeJp0vQvjw7hJnAIhCSMa7vtmj9EZTq4XI4Rzmp5dvM7PgbP5+cnr8/nZxcXpPMshm/9yyrMs",
-	"y9h5vvy1m6Ep/fhhu80+vHUf/3w+oJPjdhLUlpod8RcY5ezk4tsK229T6o2ZK6bruY34usF6TOmtMSi7",
-	"mrSnZMt2QDIATRQTQHJrFKlNZcn6PWFC2Njx55Z9uHUn6h0ngGGPOdVy44AZR8xKHrrHtWgSxhXMeTvt",
-	"HqfdDfi4CLq7JPTZhfH0BA2nx2qYCZYp8GAdTT8dh1uvOvF3nfYGkSXeYJCuhc9lJWoqzKF+7A2AoMMt",
-	"4W0Fw8696POkuYuuwfm3RtTfxs6XSOnpfdYcLkYsuZkeEs8U3vL0+4Qn9Y4VUszbxTwQ3RZwCe6kABHJ",
-	"RqQj2ngSLALxDhjyXwpuHdOKcf8fLY/rP7qMKzoqubL4AbT1vnRpkuxeLYbfO3fNPwEAAP//D89fH/oM",
-	"AAA=",
+	"H4sIAAAAAAAC/+xWW2/bNhT+KwS3hw2wLeeydNHT2qQY/JCtS4KhaJEHijyy2YmkSlJOhUD/fTikdbGl",
+	"ZGmzx74Ylshz+873naMHyo0qjQbtHU0fqOMbUCz8fWutsdfgSqMd4IvSmhKslxCOAY/xj69LoCl13kq9",
+	"ps2MKnCOrWHirJlRC58raUHQ9OPORW9wN6Ne+gIt9oPPWkcm+wTcY5A/4P6myoRRTOphkgIct7L00mia",
+	"4i3SXSPtvQWdHRQjxdi2t1tdokVurGKeprSqpOhT6uv25h/QYz8XRntrCnKLx4ux4QEo0XdwNcBjstwJ",
+	"WP7cgt1KuH+8b1uwLiQ2qhfsFiz5O57/d6Kto0GWo+gTGXZlvOYKLjasKECv4Ro+V+D8U114fXH1lnQG",
+	"ZGcx7uU3tmFGt6yooot9yxA4mDm0kx6UmyY++7KKh0fLzj+zltUj8GKSXcwBhk/jMwIUHUudG0yIG+0Z",
+	"DyCCYrKgafvqN1HrhZAWTWZUM4UuBu+a2WHNlTeKeRCktMYbbgqSG0ukc5XUa8K0IIpptsYHUWumJGdF",
+	"URNWFIYHO9fWEUArJIcdHaUA7WUuwdKUXq1u+4TwoemRuIx+BwK+wpCgQHvyrk3rp8uby6ufEcqW2PRo",
+	"sUQ/pgTNSklTerLAVzNaMr8JrUvwZw0TfLsGX1ntCNPE7NhMTE78BogLAsFqkG4MDVaCpvR38C3xKXY5",
+	"cj/EOV4u28aADtFYWRaSB+Pkk4s6hC9MlQXsqROLiGXEkYyHP1rIaUp/SPqZnewGdjKSXmDGoZY4B+cW",
+	"gY2uUorZuhd+VwOeJl37wgQxbhKqwEnCiIb7vt9TAGl8hK6RL4YJ5zU9PX+VnwFn87PjV2fz0/Pzk3mW",
+	"Qzb/5YRnWZaxs3z5azdLU/rh/WaTvX/jPvz1fFQnx+4ksi1FOwEsMMrp8fnXFbbbqtQbM1dM13MbQXaD",
+	"NZnSW2NQfjVpT8mGbYFkAJooJoDk1ihSm8qS1TvChLCx7c8te3/7TtQ7TgDDHhKrJcgePQ7olTx0f1ei",
+	"SRhXMOft1Hucezfg40Lo7pLQZxfG1BNcnB6vYTZYpsCDdTT9eBhuddkNga7T3iCyxBsM0rXwuaxEYYV5",
+	"1I+/ARB0uC28rWDYuRd9pjR30TU4/8aI+uvY+RIpPb3Xmv0FiSU300PimcJbnnyb8KTeskKKebugB6Lb",
+	"AC7DrRQgItmIdEQbT4JFIN4eQ/5Pwa1iWjHu99HyuP6jy7iqo5Irix9CG+9LlybJ9mgx/O65a/4NAAD/",
+	"/0zaTGICDQAA",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
