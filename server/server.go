@@ -15,12 +15,14 @@ type Server struct {
 	logger *zap.SugaredLogger
 	cfg    Config
 	acm    *autocert.Manager
+	store  Store
 }
 
-func New(logger *zap.SugaredLogger, cfg Config) *Server {
+func New(logger *zap.SugaredLogger, cfg Config, store Store) *Server {
 	s := &Server{
 		logger: logger,
 		cfg:    cfg,
+		store:  store,
 	}
 
 	if cfg.ACMEEnabled {

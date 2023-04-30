@@ -52,9 +52,9 @@ paths:
                 message: Too many requests have been made from your IP address.
   /subdomain/{subdomainId}/acme-challenge:
     post:
-      summary: Add acme challenge token
+      summary: Set ACME challenge tokens
       operationId: subdomain-acme-challenge
-      description: Add acme challenge token to a subdomain.
+      description: Set ACME challenge tokens for subdomain.
       parameters:
         - in: path
           name: subdomainId
@@ -76,13 +76,6 @@ paths:
       responses:
         '200':
           description: Subdomain allocated.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/NewSubdomainResponse'
-              example:
-                id: 497f6eca-6276-4993-bfeb-53cbbbba6f08
-                token: ZXhhbXBsZQ
         '403':
           description: Invalid token.
           content:
@@ -130,13 +123,21 @@ components:
     SubdomainAcmeChallengeRequest:
       title: SubdomainAcmeChallengeRequest
       type: object
-      description: New Subdomain Response.
+      description: Subdomain ACME Challenge Request.
       properties:
         token:
           type: string
           description: Control Token.
+        values:
+          type: array
+          description: ACME Tokens.
+          items:
+            type: string
+          minItems: 0
+          maxItems: 10
       required:
         - token
+        - values
     ErrorResponse:
       title: ErrorResponse
       type: object

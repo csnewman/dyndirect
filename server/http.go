@@ -63,11 +63,55 @@ func (s *Server) buildHTTPRouter() (*chi.Mux, error) {
 	tokenHash := sha512.Sum512([]byte(s.cfg.TokenKey))
 
 	v1.HandlerWithOptions(
-		v1.NewStrictHandler(&v1API{
+		v1.NewStrictHandlerWithOptions(&v1API{
 			tokenHash: tokenHash[:],
-		}, nil),
+			store:     s.store,
+		}, nil, v1.StrictHTTPServerOptions{
+			RequestErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
+				s.logger.WithOptions(zap.AddStacktrace(zapcore.NewNopCore())).Errorw(
+					"API Request Error",
+					"path", r.URL.Path,
+					"request_id", middleware.GetReqID(r.Context()),
+					"err", err,
+				)
+
+				writeResponse(
+					w, r, http.StatusBadRequest,
+					"bad-request",
+					"An error was found in the request",
+				)
+			},
+			ResponseErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
+				s.logger.WithOptions(zap.AddStacktrace(zapcore.NewNopCore())).Errorw(
+					"API Request Error",
+					"path", r.URL.Path,
+					"request_id", middleware.GetReqID(r.Context()),
+					"err", err,
+				)
+
+				writeResponse(
+					w, r, http.StatusInternalServerError,
+					"internal-error",
+					"An internal server error has occurred",
+				)
+			},
+		}),
 		v1.ChiServerOptions{
 			BaseRouter: r,
+			ErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
+				s.logger.WithOptions(zap.AddStacktrace(zapcore.NewNopCore())).Errorw(
+					"API Request Error",
+					"path", r.URL.Path,
+					"request_id", middleware.GetReqID(r.Context()),
+					"err", err,
+				)
+
+				writeResponse(
+					w, r, http.StatusInternalServerError,
+					"internal-error",
+					"An internal server error has occurred",
+				)
+			},
 		},
 	)
 

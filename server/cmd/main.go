@@ -26,7 +26,9 @@ func main() {
 		logger.Fatalw("Config error", "err", err)
 	}
 
-	s := server.New(logger, cfg)
+	store := server.NewRedisStore(cfg)
+
+	s := server.New(logger, cfg, store)
 
 	if err := s.Start(); err != nil {
 		logger.Fatal(err)

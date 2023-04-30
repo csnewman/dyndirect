@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"crypto/sha512"
+	"crypto/subtle"
 	"encoding/hex"
 	v1 "github.com/csnewman/dyndirect/server/internal/v1"
 	"github.com/google/uuid"
@@ -10,6 +11,7 @@ import (
 
 type v1API struct {
 	tokenHash []byte
+	store     Store
 }
 
 func (v *v1API) Overview(
@@ -39,11 +41,23 @@ func (v *v1API) NewSubdomain(
 }
 
 func (v *v1API) SubdomainAcmeChallenge(
-	_ context.Context,
-	_ v1.SubdomainAcmeChallengeRequestObject,
+	ctx context.Context,
+	r v1.SubdomainAcmeChallengeRequestObject,
 ) (v1.SubdomainAcmeChallengeResponseObject, error) {
-	//TODO implement me
-	panic("implement me")
+	expectedToken := v.generateToken(r.SubdomainId)
+
+	if subtle.ConstantTimeCompare([]byte(expectedToken), []byte(r.Body.Token)) != 1 {
+		return v1.SubdomainAcmeChallenge403JSONResponse{
+			Error:   "invalid-token",
+			Message: "The provided token is not valid for the subdomain.",
+		}, nil
+	}
+
+	if err := v.store.SetACMEChallengeTokens(ctx, r.SubdomainId, r.Body.Values); err != nil {
+		return nil, err
+	}
+
+	return v1.SubdomainAcmeChallenge200Response{}, nil
 }
 
 func (v *v1API) generateToken(id uuid.UUID) string {

@@ -1,12 +1,14 @@
 package server
 
 import (
+	"context"
 	"github.com/google/uuid"
 	"github.com/miekg/dns"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"net"
 	"strings"
+	"time"
 )
 
 func (s *Server) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
@@ -91,6 +93,26 @@ func (s *Server) handleDNS(r *dns.Msg, m *dns.Msg) error {
 		}
 
 		req := parts[0]
+
+		if req == "_acme-challenge" && q.Qtype == dns.TypeTXT {
+			s.logger.Infow("DNS ACME Request", "name", q.Name, "id", id)
+
+			ctx, can := context.WithTimeout(context.Background(), time.Second*5)
+			defer can()
+
+			values, err := s.store.GetACMEChallengeTokens(ctx, id)
+			if err != nil {
+				return err
+			}
+
+			for _, token := range values {
+				m.Answer = append(m.Answer, &dns.TXT{
+					Hdr: dns.RR_Header{Name: q.Name, Rrtype: q.Qtype, Class: q.Qclass, Ttl: 0},
+					Txt: []string{token},
+				})
+			}
+			continue
+		}
 
 		lastInd := strings.LastIndex(req, "-")
 		if lastInd == -1 {

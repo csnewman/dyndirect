@@ -42,10 +42,13 @@ type OverviewResponse struct {
 	Version string `json:"version"`
 }
 
-// SubdomainAcmeChallengeRequest New Subdomain Response.
+// SubdomainAcmeChallengeRequest Subdomain ACME Challenge Request.
 type SubdomainAcmeChallengeRequest struct {
 	// Token Control Token.
 	Token string `json:"token"`
+
+	// Values ACME Tokens.
+	Values []string `json:"values"`
 }
 
 // SubdomainAcmeChallengeJSONRequestBody defines body for SubdomainAcmeChallenge for application/json ContentType.
@@ -59,7 +62,7 @@ type ServerInterface interface {
 	// Request new subdomain
 	// (POST /subdomain)
 	NewSubdomain(w http.ResponseWriter, r *http.Request)
-	// Add acme challenge token
+	// Set ACME challenge tokens
 	// (POST /subdomain/{subdomainId}/acme-challenge)
 	SubdomainAcmeChallenge(w http.ResponseWriter, r *http.Request, subdomainId openapi_types.UUID)
 }
@@ -305,13 +308,12 @@ type SubdomainAcmeChallengeResponseObject interface {
 	VisitSubdomainAcmeChallengeResponse(w http.ResponseWriter) error
 }
 
-type SubdomainAcmeChallenge200JSONResponse NewSubdomainResponse
+type SubdomainAcmeChallenge200Response struct {
+}
 
-func (response SubdomainAcmeChallenge200JSONResponse) VisitSubdomainAcmeChallengeResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
+func (response SubdomainAcmeChallenge200Response) VisitSubdomainAcmeChallengeResponse(w http.ResponseWriter) error {
 	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
+	return nil
 }
 
 type SubdomainAcmeChallenge403JSONResponse ErrorResponse
@@ -340,7 +342,7 @@ type StrictServerInterface interface {
 	// Request new subdomain
 	// (POST /subdomain)
 	NewSubdomain(ctx context.Context, request NewSubdomainRequestObject) (NewSubdomainResponseObject, error)
-	// Add acme challenge token
+	// Set ACME challenge tokens
 	// (POST /subdomain/{subdomainId}/acme-challenge)
 	SubdomainAcmeChallenge(ctx context.Context, request SubdomainAcmeChallengeRequestObject) (SubdomainAcmeChallengeResponseObject, error)
 }
@@ -459,22 +461,23 @@ func (sh *strictHandler) SubdomainAcmeChallenge(w http.ResponseWriter, r *http.R
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/+xWTXPbNhD9Kxi0h3aGEhXbdWqe6kQ96OA2dTydTDI+gMBSREoADADK5Xj43zsLih8S",
-	"adeJfWsvGorAfrzdt295T7lRpdGgvaPJPXU8B8XC46/WGnsNrjTaAb4orSnBegnhGPAYH3xdAk2o81bq",
-	"LW0iqsA5toWZsyaiFr5U0oKgyae9i8HgNqJe+gItDoNHnSOTfgbuMchvcPe+SoVRTOpxkgIct7L00mia",
-	"4C3SXyPdvSWNjsBIMbUd7DZrtMiMVczThFaVFENKA25v/gI99fPWaG9NQW7weDk1PCpK6zu4GtVjFu5M",
-	"WX7fgd1JuHu4bzuwLiQ2wQt2B5b82Z7/e6Kdo1GWk+gzGfYwLrmCtzkrCtBbuIYvFTj/7R18meJP6v54",
-	"thN46E/qzGAi3GjPeIAEismCJt2rX0Stl0JaNImoZgpdjN410RGKy8obxTwIUlrjDTcFyYwl0rlK6i1h",
-	"WhDFNNviH1FrpiRnRVETVhSGBzvX4XBYhEJy2JNDCtBeZhIsTejV5mZICP80QyXWrd9RM64wJCjQnrzr",
-	"0vph/X599SONBprRV8sV+jElaFZKmtDTJb6KaMl8HnoX488WZrp/Db6y2hGmidlzi5iM+ByIC3RFNEgD",
-	"hgYbMeIgxc62bAlBTlarriugQyhWloXkwTL+7NqRgL+ZKgs4GBRE0GJo1REPv7eQ0YR+Fw/yGe+1M55M",
-	"QaDFsbhwDs4tAwNdpRSz9TCDPQY8jfvehWE2brZOgZCEEQ13Q7On1RnryLMrhKpJzy5eZ+fA2eL85PX5",
-	"4uzi4nSRZpAufjrlaZqm7Dxb/dwrWkI/fsjz9MMb9/GPpxd0Vvxmi9pRsyf+EqOcnVx8HbD9bqPemIVi",
-	"ul7Ytr5utKwSemMMjl1NulOSsx2QFEATxQSQzBpFalNZsnlHmBC27fhTYR/uwBm80wQw7DGnOm4cMOOI",
-	"WfF9/7gRTcy4ggXv1O5h2l0KQfAu6e+S0GfiDWGP0XBeVoMmWKbAg3U0+XQcbrPuh7/vNEYSgniDQfoW",
-	"PpWVOFNBhwbZGxWCjpeDtxWMO/esj4XmtnUNzr8xov46dj5nlB7fZ83hPkTIzX9GJFan3yYSUu9YIcWi",
-	"Tf5AIHLAhb2TAsR+MKQj2ngSLMIOP2DzS4rDpk2rjfu/DD6oVa3H9muiFZ3K4rda7n3pkjjevVqOP81u",
-	"m38CAAD//7/A3GszDQAA",
+	"H4sIAAAAAAAC/+xWTXPbNhD9Kxi0h3ZGEhXbdWqemlg56OA2tT2dTDI+gMBSQkoADADK4Xj43zsLiB8S",
+	"adeJe+xFQxHYr7fv7fKBcqNKo0F7R9MH6vgWFAuP76w19hpcabQDfFFaU4L1EsIx4DE++LoEmlLnrdQb",
+	"2syoAufYBibOmhm18KWSFgRNP+1d9AZ3M+qlL9DiMPisdWSyz8A9Bvkd7m+qTBjFpB4mKcBxK0svjaYp",
+	"3iLdNdLeW9DZUTFSjG17u/UKLXJjFfM0pVUlRZ9SX7c3f4Me+7k02ltTkFs8XowNj0CJvoOrAR6T5U7A",
+	"8scO7E7C/eN924F1IbFRvWB3YMlf8fzfE20dDbIcRZ/IsCvjDVdwuWVFAXoD1/ClAuef6sKby6t3pDMg",
+	"e4txL7+zDTO6Y0UVXRxahsDBzKGd9KDcNPHZ13U8fLXs/DNrWT0CLybZxRxg+DQ+I0DRsdS5wYS40Z7x",
+	"ACIoJguatq9+E7VeCGnRZEY1U+hi8K6ZHddceaOYB0FKa7zhpiC5sUQ6V0m9IUwLophmG/wjas2U5Kwo",
+	"asKKwvBg59o6AmiF5LCnoxSgvcwlWJrSq/VtnxD+aXokVtHvQMBXGBIUaE/et2n9tLpZXf2MULbEpq8W",
+	"S/RjStCslDSlpwt8NaMl89vQugR/NjDBt2vwldWOME3Mns3E5MRvgbggEKwG6cbQYC0GrKfY4kj8EORk",
+	"uWy7AjqEYmVZSB4sk88uihC+MlUWcCBNrCDWEOcxHv5oIacp/SHpB3ayn9bJSHeBFsdC4hycWwQqukop",
+	"Zute9V0NeJp0vQvjw7hJnAIhCSMa7vtmj9EZTq4XI4Rzmp5dvM7PgbP5+cnr8/nZxcXpPMshm/9yyrMs",
+	"y9h5vvy1m6Ep/fhhu80+vHUf/3w+oJPjdhLUlpod8RcY5ezk4tsK229T6o2ZK6bruY34usF6TOmtMSi7",
+	"mrSnZMt2QDIATRQTQHJrFKlNZcn6PWFC2Njx55Z9uHUn6h0ngGGPOdVy44AZR8xKHrrHtWgSxhXMeTvt",
+	"HqfdDfi4CLq7JPTZhfH0BA2nx2qYCZYp8GAdTT8dh1uvOvF3nfYGkSXeYJCuhc9lJWoqzKF+7A2AoMMt",
+	"4W0Fw8696POkuYuuwfm3RtTfxs6XSOnpfdYcLkYsuZkeEs8U3vL0+4Qn9Y4VUszbxTwQ3RZwCe6kABHJ",
+	"RqQj2ngSLALxDhjyXwpuHdOKcf8fLY/rP7qMKzoqubL4AbT1vnRpkuxeLYbfO3fNPwEAAP//D89fH/oM",
+	"AAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

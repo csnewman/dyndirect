@@ -7,6 +7,10 @@ tls_key: example.key
 acme_enabled: false
 acme_contact: v1.contact@example.com
 token_key: to_be_changed
+redis_addr: 127.0.0.1:6379
+redis_user:
+redis_pass:
+redis_db: 0
 
 static_records:
   '@':
