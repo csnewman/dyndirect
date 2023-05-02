@@ -34,6 +34,9 @@ type NewSubdomainResponse struct {
 
 // OverviewResponse defines model for OverviewResponse.
 type OverviewResponse struct {
+	// ClientIp The clients IP address.
+	ClientIp string `json:"client_ip"`
+
 	// Version Server Version.
 	Version string `json:"version"`
 }

@@ -2,6 +2,7 @@ package server
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha512"
 	"encoding/json"
 	v1 "github.com/csnewman/dyndirect/server/internal/v1"
@@ -63,39 +64,45 @@ func (s *Server) buildHTTPRouter() (*chi.Mux, error) {
 	tokenHash := sha512.Sum512([]byte(s.cfg.TokenKey))
 
 	v1.HandlerWithOptions(
-		v1.NewStrictHandlerWithOptions(&v1API{
-			tokenHash: tokenHash[:],
-			store:     s.store,
-		}, nil, v1.StrictHTTPServerOptions{
-			RequestErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
-				s.logger.WithOptions(zap.AddStacktrace(zapcore.NewNopCore())).Errorw(
-					"API Request Error",
-					"path", r.URL.Path,
-					"request_id", middleware.GetReqID(r.Context()),
-					"err", err,
-				)
-
-				writeResponse(
-					w, r, http.StatusBadRequest,
-					"bad-request",
-					"An error was found in the request",
-				)
+		v1.NewStrictHandlerWithOptions(
+			&v1API{
+				tokenHash: tokenHash[:],
+				store:     s.store,
 			},
-			ResponseErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
-				s.logger.WithOptions(zap.AddStacktrace(zapcore.NewNopCore())).Errorw(
-					"API Request Error",
-					"path", r.URL.Path,
-					"request_id", middleware.GetReqID(r.Context()),
-					"err", err,
-				)
-
-				writeResponse(
-					w, r, http.StatusInternalServerError,
-					"internal-error",
-					"An internal server error has occurred",
-				)
+			[]v1.StrictMiddlewareFunc{
+				s.requestMiddleware,
 			},
-		}),
+			v1.StrictHTTPServerOptions{
+				RequestErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
+					s.logger.WithOptions(zap.AddStacktrace(zapcore.NewNopCore())).Errorw(
+						"API Request Error",
+						"path", r.URL.Path,
+						"request_id", middleware.GetReqID(r.Context()),
+						"err", err,
+					)
+
+					writeResponse(
+						w, r, http.StatusBadRequest,
+						"bad-request",
+						"An error was found in the request",
+					)
+				},
+				ResponseErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
+					s.logger.WithOptions(zap.AddStacktrace(zapcore.NewNopCore())).Errorw(
+						"API Request Error",
+						"path", r.URL.Path,
+						"request_id", middleware.GetReqID(r.Context()),
+						"err", err,
+					)
+
+					writeResponse(
+						w, r, http.StatusInternalServerError,
+						"internal-error",
+						"An internal server error has occurred",
+					)
+				},
+			},
+		),
 		v1.ChiServerOptions{
 			BaseRouter: r,
 			ErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
@@ -223,4 +230,17 @@ func writeResponse(w http.ResponseWriter, r *http.Request, status int, code stri
 		Error:   code,
 		Message: msg,
 	})
+}
+
+const requestKey = "dd-http-request"
+
+func (s *Server) requestMiddleware(f v1.StrictHandlerFunc, _ string) v1.StrictHandlerFunc {
+	return func(ctx context.Context, w http.ResponseWriter, r *http.Request, args any) (any, error) {
+		return f(context.WithValue(ctx, requestKey, r), w, r, args)
+	}
+}
+
+func requestFromCtx(ctx context.Context) (*http.Request, bool) {
+	u, ok := ctx.Value(requestKey).(*http.Request)
+	return u, ok
 }

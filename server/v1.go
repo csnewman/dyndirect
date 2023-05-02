@@ -5,8 +5,10 @@ import (
 	"crypto/sha512"
 	"crypto/subtle"
 	"encoding/hex"
+	"fmt"
 	v1 "github.com/csnewman/dyndirect/server/internal/v1"
 	"github.com/google/uuid"
+	"net"
 )
 
 type v1API struct {
@@ -15,11 +17,27 @@ type v1API struct {
 }
 
 func (v *v1API) GetOverview(
-	_ context.Context,
+	ctx context.Context,
 	_ v1.GetOverviewRequestObject,
 ) (v1.GetOverviewResponseObject, error) {
+	r, ok := requestFromCtx(ctx)
+	if !ok {
+		return nil, fmt.Errorf("request missing in ctx")
+	}
+
+	ip, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		return nil, err
+	}
+
+	userIP := net.ParseIP(ip)
+	if userIP == nil {
+		return nil, err
+	}
+
 	return v1.GetOverview200JSONResponse{
-		Version: Version,
+		Version:  Version,
+		ClientIp: userIP.String(),
 	}, nil
 }
 

@@ -103,8 +103,12 @@ components:
         version:
           type: string
           description: Server Version.
+        client_ip:
+          type: string
+          description: The clients IP address.
       required:
         - version
+        - client_ip
     NewSubdomainResponse:
       title: NewSubdomainResponse
       type: object
