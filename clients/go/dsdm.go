@@ -11,6 +11,8 @@ import (
 	"strings"
 )
 
+const DynDirect string = "https://v1.dyn.direct/"
+
 type OverviewResponse = internal.OverviewResponse
 
 type SubdomainResponse = internal.NewSubdomainResponse
