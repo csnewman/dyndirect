@@ -2,13 +2,14 @@ package server
 
 import (
 	"context"
+	"net"
+	"strings"
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/miekg/dns"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"net"
-	"strings"
-	"time"
 )
 
 func (s *Server) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
@@ -57,6 +58,7 @@ func (s *Server) handleDNS(r *dns.Msg, m *dns.Msg) error {
 		}
 
 		lcName := strings.ToLower(q.Name)
+
 		var name string
 
 		if lcName == s.cfg.RootDomain {
@@ -111,6 +113,7 @@ func (s *Server) handleDNS(r *dns.Msg, m *dns.Msg) error {
 					Txt: []string{token},
 				})
 			}
+
 			continue
 		}
 
@@ -139,6 +142,7 @@ func (s *Server) handleDNS(r *dns.Msg, m *dns.Msg) error {
 			})
 
 			s.logger.Infow("DNS V4 Request", "name", q.Name, "id", id, "ip", v4)
+
 			continue
 		} else if reqType == "v6" && q.Qtype == dns.TypeAAAA {
 			v6 := net.ParseIP(strings.ReplaceAll(reqValue, "-", ":"))
@@ -157,6 +161,7 @@ func (s *Server) handleDNS(r *dns.Msg, m *dns.Msg) error {
 			})
 
 			s.logger.Infow("DNS V6 Request", "name", q.Name, "id", id, "ip", v6)
+
 			continue
 		}
 	}

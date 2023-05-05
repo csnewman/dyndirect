@@ -4,11 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/csnewman/dyndirect/clients/go/internal"
-	"github.com/google/uuid"
 	"io"
 	"net/http"
 	"strings"
+
+	"github.com/csnewman/dyndirect/clients/go/internal"
+	"github.com/google/uuid"
 )
 
 const DynDirect string = "https://v1.dyn.direct/"
@@ -89,7 +90,10 @@ func (e APIError) Error() string {
 
 func parseResponse[T any](rsp *http.Response) (*T, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
+
+	//nolint:noerr
+	defer rsp.Body.Close()
+
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +107,7 @@ func parseResponse[T any](rsp *http.Response) (*T, error) {
 		}
 	}
 
-	if rsp.StatusCode == 200 {
+	if rsp.StatusCode == http.StatusOK {
 		var dest T
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
@@ -126,12 +130,15 @@ func parseResponse[T any](rsp *http.Response) (*T, error) {
 
 func parseEmptyResponse(rsp *http.Response) error {
 	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
+
+	//nolint:noerr
+	defer rsp.Body.Close()
+
 	if err != nil {
 		return err
 	}
 
-	if rsp.StatusCode == 200 {
+	if rsp.StatusCode == http.StatusOK {
 		return nil
 	}
 

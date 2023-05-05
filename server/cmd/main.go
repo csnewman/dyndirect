@@ -8,6 +8,8 @@ import (
 
 func main() {
 	rawLogger, _ := zap.NewDevelopment()
+
+	//nolint:errcheck
 	defer rawLogger.Sync()
 
 	logger := rawLogger.Sugar()
@@ -33,5 +35,4 @@ func main() {
 	if err := s.Start(); err != nil {
 		logger.Fatal(err)
 	}
-
 }

@@ -4,9 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/redis/go-redis/v9"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/pkg/errors"
+	"github.com/redis/go-redis/v9"
 )
 
 type Store interface {
@@ -45,7 +47,7 @@ func (s *RedisStore) GetACMEChallengeTokens(ctx context.Context, id uuid.UUID) (
 	var res []string
 
 	val, err := s.rdb.Get(ctx, fmt.Sprintf("%s-acme-challenge", id)).Result()
-	if err == redis.Nil {
+	if errors.Is(err, redis.Nil) {
 		return res, nil
 	} else if err != nil {
 		return nil, err

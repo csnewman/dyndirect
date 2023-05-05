@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"crypto/tls"
+
 	"github.com/miekg/dns"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/acme/autocert"
@@ -54,7 +55,9 @@ func (s *Server) Start() error {
 		group.Go(rs.ListenAndServe)
 
 		hs.Addr = s.cfg.APIListenHTTPS
-		hs.TLSConfig = &tls.Config{}
+		hs.TLSConfig = &tls.Config{
+			MinVersion: tls.VersionTLS12,
+		}
 
 		if s.cfg.ACMEEnabled {
 			hs.TLSConfig.GetCertificate = s.acm.GetCertificate

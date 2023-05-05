@@ -5,6 +5,9 @@ import (
 	"context"
 	"crypto/sha512"
 	"encoding/json"
+	"net/http"
+	"time"
+
 	v1 "github.com/csnewman/dyndirect/server/internal/v1"
 	oapi "github.com/deepmap/oapi-codegen/pkg/chi-middleware"
 	"github.com/getkin/kin-openapi/openapi3filter"
@@ -13,8 +16,6 @@ import (
 	"github.com/go-chi/render"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"net/http"
-	"time"
 )
 
 func (s *Server) buildHTTPRouter() (*chi.Mux, error) {
@@ -55,7 +56,7 @@ func (s *Server) buildHTTPRouter() (*chi.Mux, error) {
 
 				w.Header().Set("Content-Type", "application/json; charset=utf-8")
 				w.WriteHeader(http.StatusBadRequest)
-				w.Write(buf.Bytes())
+				_, _ = w.Write(buf.Bytes())
 			},
 			MultiErrorHandler: nil,
 		},
@@ -201,6 +202,7 @@ func (s *Server) httpRecoverer(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if rvr := recover(); rvr != nil {
+				//nolint:errorlint,goerr113
 				if rvr == http.ErrAbortHandler {
 					panic(rvr)
 				}
@@ -232,7 +234,9 @@ func writeResponse(w http.ResponseWriter, r *http.Request, status int, code stri
 	})
 }
 
-const requestKey = "dd-http-request"
+type requestKeyType string
+
+const requestKey requestKeyType = "dd-http-request"
 
 func (s *Server) requestMiddleware(f v1.StrictHandlerFunc, _ string) v1.StrictHandlerFunc {
 	return func(ctx context.Context, w http.ResponseWriter, r *http.Request, args any) (any, error) {
@@ -242,5 +246,6 @@ func (s *Server) requestMiddleware(f v1.StrictHandlerFunc, _ string) v1.StrictHa
 
 func requestFromCtx(ctx context.Context) (*http.Request, bool) {
 	u, ok := ctx.Value(requestKey).(*http.Request)
+
 	return u, ok
 }

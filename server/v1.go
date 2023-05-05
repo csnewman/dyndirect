@@ -5,11 +5,14 @@ import (
 	"crypto/sha512"
 	"crypto/subtle"
 	"encoding/hex"
-	"fmt"
+	"net"
+
 	v1 "github.com/csnewman/dyndirect/server/internal/v1"
 	"github.com/google/uuid"
-	"net"
+	"github.com/pkg/errors"
 )
+
+var errRequestMissingInCtx = errors.New("request missing in ctx")
 
 type v1API struct {
 	tokenHash []byte
@@ -22,7 +25,7 @@ func (v *v1API) GetOverview(
 ) (v1.GetOverviewResponseObject, error) {
 	r, ok := requestFromCtx(ctx)
 	if !ok {
-		return nil, fmt.Errorf("request missing in ctx")
+		return nil, errRequestMissingInCtx
 	}
 
 	ip, _, err := net.SplitHostPort(r.RemoteAddr)
@@ -79,7 +82,9 @@ func (v *v1API) SubdomainAcmeChallenge(
 }
 
 func (v *v1API) generateToken(id uuid.UUID) string {
-	buf := append(v.tokenHash[:], id[:]...)
+	buf := v.tokenHash
+	buf = append(buf, id[:]...)
 	hash := sha512.Sum512(buf)
+
 	return hex.EncodeToString(hash[:])
 }
