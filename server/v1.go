@@ -45,7 +45,7 @@ func (v *v1API) GetOverview(
 }
 
 func (v *v1API) GenerateSubdomain(
-	_ context.Context,
+	ctx context.Context,
 	_ v1.GenerateSubdomainRequestObject,
 ) (v1.GenerateSubdomainResponseObject, error) {
 	id, err := uuid.NewRandom()
@@ -54,6 +54,8 @@ func (v *v1API) GenerateSubdomain(
 	}
 
 	token := v.generateToken(id)
+
+	v.store.IncrementStat(ctx, "api_subdomain_new", 1)
 
 	return v1.GenerateSubdomain200JSONResponse{
 		Id:    id,
@@ -68,6 +70,8 @@ func (v *v1API) SubdomainAcmeChallenge(
 	expectedToken := v.generateToken(r.SubdomainId)
 
 	if subtle.ConstantTimeCompare([]byte(expectedToken), []byte(r.Body.Token)) != 1 {
+		v.store.IncrementStat(ctx, "api_token_invalid", 1)
+
 		return v1.SubdomainAcmeChallenge403JSONResponse{
 			Error:   "invalid-token",
 			Message: "The provided token is not valid for the subdomain.",
@@ -77,6 +81,8 @@ func (v *v1API) SubdomainAcmeChallenge(
 	if err := v.store.SetACMEChallengeTokens(ctx, r.SubdomainId, r.Body.Values); err != nil {
 		return nil, err
 	}
+
+	v.store.IncrementStat(ctx, "api_acme_set", 1)
 
 	return v1.SubdomainAcmeChallenge200Response{}, nil
 }

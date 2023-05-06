@@ -9,6 +9,7 @@ require (
 	github.com/go-chi/render v1.0.2
 	github.com/google/uuid v1.3.0
 	github.com/miekg/dns v1.1.53
+	github.com/pkg/errors v0.9.1
 	github.com/redis/go-redis/v9 v9.0.3
 	github.com/spf13/viper v1.15.0
 	go.uber.org/zap v1.24.0
@@ -28,7 +29,6 @@ require (
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/invopop/yaml v0.1.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
-	github.com/labstack/gommon v0.4.0 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect

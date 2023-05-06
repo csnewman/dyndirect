@@ -28,7 +28,22 @@ func main() {
 		logger.Fatalw("Config error", "err", err)
 	}
 
-	store := server.NewRedisStore(cfg)
+	var store server.Store
+
+	if cfg.Store == "mem" {
+		mem, err := server.NewMemStore(logger)
+		if err != nil {
+			logger.Fatal(err)
+		}
+
+		go mem.AutoCleanup()
+
+		store = mem
+	} else if cfg.Store == "redis" {
+		store = server.NewRedisStore(cfg)
+	} else {
+		logger.Fatalw("Invalid store provided", "store", cfg.Store)
+	}
 
 	s := server.New(logger, cfg, store)
 

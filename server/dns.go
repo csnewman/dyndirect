@@ -28,7 +28,10 @@ func (s *Server) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
 	m.Compress = true
 	m.Authoritative = true
 
-	if err := s.handleDNS(r, m); err != nil {
+	ctx, can := context.WithTimeout(context.Background(), time.Second*5)
+	defer can()
+
+	if err := s.handleDNS(ctx, r, m); err != nil {
 		s.logger.WithOptions(zap.AddStacktrace(zapcore.NewNopCore())).Errorw(
 			"DNS Request Error",
 			"request_id", r.Id,
@@ -49,7 +52,9 @@ func (s *Server) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
 	}
 }
 
-func (s *Server) handleDNS(r *dns.Msg, m *dns.Msg) error {
+func (s *Server) handleDNS(ctx context.Context, r *dns.Msg, m *dns.Msg) error {
+	s.store.IncrementStat(ctx, "dns_questions", int64(len(r.Question)))
+
 	for _, q := range r.Question {
 		s.logger.Infow("DNS Question", "Id", r.Id, "Name", q.Name, "Qtype", q.Qtype, "Qclass", q.Qclass)
 
@@ -72,6 +77,8 @@ func (s *Server) handleDNS(r *dns.Msg, m *dns.Msg) error {
 		static, hasStatic := s.cfg.StaticRecords[name]
 
 		if hasStatic {
+			s.store.IncrementStat(ctx, "dns_static", 1)
+
 			if q.Qtype == dns.TypeA {
 				for _, a := range static.A {
 					m.Answer = append(m.Answer, &dns.A{
@@ -98,9 +105,7 @@ func (s *Server) handleDNS(r *dns.Msg, m *dns.Msg) error {
 
 		if req == "_acme-challenge" && q.Qtype == dns.TypeTXT {
 			s.logger.Infow("DNS ACME Request", "name", q.Name, "id", id)
-
-			ctx, can := context.WithTimeout(context.Background(), time.Second*5)
-			defer can()
+			s.store.IncrementStat(ctx, "dns_acme", 1)
 
 			values, err := s.store.GetACMEChallengeTokens(ctx, id)
 			if err != nil {
@@ -126,6 +131,8 @@ func (s *Server) handleDNS(r *dns.Msg, m *dns.Msg) error {
 		reqValue := req[:lastInd]
 
 		if reqType == "v4" && q.Qtype == dns.TypeA {
+			s.store.IncrementStat(ctx, "dns_v4", 1)
+
 			v4 := net.ParseIP(strings.ReplaceAll(reqValue, "-", "."))
 			if v4 == nil {
 				continue
@@ -145,6 +152,8 @@ func (s *Server) handleDNS(r *dns.Msg, m *dns.Msg) error {
 
 			continue
 		} else if reqType == "v6" && q.Qtype == dns.TypeAAAA {
+			s.store.IncrementStat(ctx, "dns_v6", 1)
+
 			v6 := net.ParseIP(strings.ReplaceAll(reqValue, "-", ":"))
 			if v6 == nil {
 				continue
