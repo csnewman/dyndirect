@@ -21,3 +21,17 @@ jobs:
         with:
           version: latest
           working-directory: server
+  go-client:
+    name: Lint Go Client
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-go@v4
+        with:
+          go-version: '1.20'
+          cache: false
+      - uses: actions/checkout@v3
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+          working-directory: clients/go
