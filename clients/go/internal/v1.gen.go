@@ -25,6 +25,9 @@ type ErrorResponse struct {
 
 // NewSubdomainResponse New Subdomain Response.
 type NewSubdomainResponse struct {
+	// Domain Allocated domain.
+	Domain string `json:"domain"`
+
 	// Id Subdomain ID.
 	Id openapi_types.UUID `json:"id"`
 

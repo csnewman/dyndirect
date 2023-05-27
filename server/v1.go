@@ -5,6 +5,7 @@ import (
 	"crypto/sha512"
 	"crypto/subtle"
 	"encoding/hex"
+	"fmt"
 	"net"
 
 	v1 "github.com/csnewman/dyndirect/server/internal/v1"
@@ -15,8 +16,9 @@ import (
 var errRequestMissingInCtx = errors.New("request missing in ctx")
 
 type v1API struct {
-	tokenHash []byte
-	store     Store
+	tokenHash  []byte
+	store      Store
+	rootDomain string
 }
 
 func (v *v1API) GetOverview(
@@ -55,11 +57,14 @@ func (v *v1API) GenerateSubdomain(
 
 	token := v.generateToken(id)
 
+	domain := fmt.Sprintf("%s.%s", id, v.rootDomain)
+
 	v.store.IncrementStat(ctx, "api_subdomain_new", 1)
 
 	return v1.GenerateSubdomain200JSONResponse{
-		Id:    id,
-		Token: token,
+		Id:     id,
+		Token:  token,
+		Domain: domain,
 	}, nil
 }
 

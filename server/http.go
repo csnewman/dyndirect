@@ -6,6 +6,7 @@ import (
 	"crypto/sha512"
 	"encoding/json"
 	"net/http"
+	"strings"
 	"time"
 
 	v1 "github.com/csnewman/dyndirect/server/internal/v1"
@@ -67,8 +68,9 @@ func (s *Server) buildHTTPRouter() (*chi.Mux, error) {
 	v1.HandlerWithOptions(
 		v1.NewStrictHandlerWithOptions(
 			&v1API{
-				tokenHash: tokenHash[:],
-				store:     s.store,
+				tokenHash:  tokenHash[:],
+				store:      s.store,
+				rootDomain: strings.TrimSuffix(s.cfg.RootDomain, "."),
 			},
 			[]v1.StrictMiddlewareFunc{
 				s.requestMiddleware,

@@ -121,9 +121,13 @@ components:
         token:
           type: string
           description: Control Token.
+        domain:
+          type: string
+          description: Allocated domain.
       required:
         - id
         - token
+        - domain
     SubdomainAcmeChallengeRequest:
       title: SubdomainAcmeChallengeRequest
       type: object
