@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"strings"
 
@@ -55,6 +56,16 @@ func (c *Client) RequestSubdomain(ctx context.Context) (*SubdomainResponse, erro
 	}
 
 	return parseResponse[SubdomainResponse](resp)
+}
+
+func GetDomainForIP(rootDomain string, ip net.IP) string {
+	rootDomain = strings.ToLower(rootDomain)
+
+	if v4 := ip.To4(); v4 != nil {
+		return fmt.Sprintf("%s-v4.%s", strings.ReplaceAll(v4.String(), ".", "-"), rootDomain)
+	}
+
+	return fmt.Sprintf("%s-v6.%s", strings.ReplaceAll(ip.String(), ":", "-"), rootDomain)
 }
 
 func (c *Client) SetSubdomainACMEChallenge(
