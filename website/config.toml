@@ -21,10 +21,10 @@ weight = 1
 
 [[menu.main]]
 name = "Docs"
-url = "/docs"
+url = "/docs/start"
 weight = 2
 
 [params]
-homepage_button_link = '/docs'
+homepage_button_link = '/docs/start'
 homepage_button_text = 'Read The Docs'
 #homepage_image = '/images/terminal.gif'
