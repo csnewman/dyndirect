@@ -1,4 +1,4 @@
-module github.com/csnewman/dyndirect/clients/go
+module github.com/csnewman/dyndirect/go
 
 go 1.20
 

@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/csnewman/dyndirect/clients/go/internal"
+	"github.com/csnewman/dyndirect/go/internal"
 	"github.com/google/uuid"
 )
 
