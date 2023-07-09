@@ -21,6 +21,7 @@ linters:
     - cyclop
     - ireturn
     - bodyclose
+    - depguard
 linters-settings:
   gocritic:
     disabled-checks:
