@@ -47,7 +47,6 @@ func generateZeroSslAccount(ctx context.Context, email string, timeout time.Dura
 		return nil, err
 	}
 
-	//nolint:noerr
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {

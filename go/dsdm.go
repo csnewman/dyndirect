@@ -104,7 +104,6 @@ func (e APIError) Error() string {
 func parseResponse[T any](rsp *http.Response) (*T, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 
-	//nolint:noerr
 	defer rsp.Body.Close()
 
 	if err != nil {
@@ -144,7 +143,6 @@ func parseResponse[T any](rsp *http.Response) (*T, error) {
 func parseEmptyResponse(rsp *http.Response) error {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 
-	//nolint:noerr
 	defer rsp.Body.Close()
 
 	if err != nil {
