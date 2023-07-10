@@ -76,3 +76,34 @@ if err != nil {
 
 The challenge token will expire after some period of time. You should not rely on this value being available for any
 extended period.
+
+#### Automatically acquire certificate
+
+Instead of calling `SetSubdomainACMEChallenge` directly, you can use the `AcquireCertificate` helper to simplify the
+process:
+
+```go
+res, err := c.AcquireCertificate(ctx, dsdm.AcquireCertificateRequest{
+    ID:         r.Id,
+    Domain:     r.Domain,
+    Token:      r.Token,
+    Provider:   dsdm.ProviderZeroSSL,
+    KeyType:    certcrypto.RSA2048,
+    Timeout:    60 * time.Second,
+    SilenceLog: true,
+})
+if err != nil {
+    // ...
+}
+
+log.Info("Domain ", res.Domain)
+log.Info("CertURL ", res.CertURL)
+log.Info("CertStableURL ", res.CertStableURL)
+log.Info("PrivateKey ", len(res.PrivateKey))
+log.Info("Certificate ", len(res.Certificate))
+log.Info("IssuerCertificate ", len(res.IssuerCertificate))
+log.Info("CSR ", len(res.CSR))
+```
+
+`AcquireCertificate` implies acceptance of the TOS of the respective provider. Some providers may apply rate limits,
+such as by IP.

@@ -24,6 +24,11 @@ name = "Docs"
 url = "/docs/start"
 weight = 2
 
+[[menu.main]]
+name = "GitHub"
+url = "https://github.com/csnewman/dyndirect"
+weight = 3
+
 [params]
 homepage_button_link = '/docs/start'
 homepage_button_text = 'Read The Docs'
