@@ -26,7 +26,8 @@ type SubdomainACMEChallengeRequest struct {
 }
 
 type Client struct {
-	v1 *internal.Client
+	server string
+	v1     *internal.Client
 }
 
 func New(server string) (*Client, error) {
@@ -36,7 +37,8 @@ func New(server string) (*Client, error) {
 	}
 
 	return &Client{
-		v1: c,
+		server: server,
+		v1:     c,
 	}, nil
 }
 
