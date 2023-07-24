@@ -4,16 +4,6 @@ on:
   push:
     branches:
       - master
-  workflow_dispatch:
-
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: "pages"
-  cancel-in-progress: false
 
 defaults:
   run:
@@ -22,6 +12,10 @@ defaults:
 jobs:
   build:
     runs-on: ubuntu-latest
+    environment: website
+    permissions:
+      contents: read
+      deployments: write
     env:
       HUGO_VERSION: 0.111.3
     steps:
@@ -52,18 +46,12 @@ jobs:
             --gc \
             --minify \
             --baseURL "${{ steps.pages.outputs.base_url }}/"
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v1
+      - name: Publish
+        uses: cloudflare/pages-action@1
         with:
-          path: ./website/public
-
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v2
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: 'dyndirect-website'
+          directory: website/public
+          branch: main
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
