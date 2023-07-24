@@ -13,9 +13,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
     environment: website
-    permissions:
-      contents: read
-      deployments: write
     env:
       HUGO_VERSION: 0.111.3
     steps:
@@ -54,4 +51,3 @@ jobs:
           projectName: 'dyndirect-website'
           directory: website/public
           branch: main
-          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
